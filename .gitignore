@@ -1,0 +1,4 @@
+node_modules
+uploads/*
+database.json
+package-lock.json

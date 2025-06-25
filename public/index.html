@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暑假学习计划打卡</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <h1>暑假学习计划打卡</h1>
+        <div class="total-score-container">
+            当前总分数: <span id="total-score">0</span>
+        </div>
+    </header>
+
+    <main id="calendar-container">
+        </main>
+
+    <div id="modal-overlay" class="hidden">
+        <div id="modal-content">
+            <button id="close-modal-btn">&times;</button>
+            <h3 id="modal-title">2024-07-15 学习记录</h3>
+            <form id="upload-form">
+                <input type="hidden" id="form-date" name="date">
+                </form>
+            <div id="preview-area">
+                </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
