@@ -73,17 +73,25 @@ class UploadHandler {
       const parent = fileInput.closest('.item-action') || fileInput.closest('.sub-item-action');
       const selectBtn = parent.querySelector('.upload-btn');
 
+      const updateButtonState = (text, disabled) => {
+        selectBtn.textContent = text;
+        selectBtn.disabled = disabled;
+      };
+
       if (fileInput.files.length > 0) {
-        selectBtn.textContent = '上传中...';
-        selectBtn.disabled = true;
+        updateButtonState('上传中...', true);
 
         await this._performUpload(uploadType, fileInput.files, allData, modal, updateTotalScore);
 
-        selectBtn.textContent = '选择文件';
-        selectBtn.disabled = false;
+        // 上传完成后，根据当前文件数量更新按钮文本
+        const currentFiles = allData[this.formDateInput.value]?.items?.[uploadType] || [];
+        const canUploadMore = currentFiles.length < 10;
+        const newButtonText = currentFiles.length > 0 ? `继续上传 (${currentFiles.length}/10)` : '选择文件';
+        updateButtonState(newButtonText, !canUploadMore);
+
         fileInput.value = ''; // 清空已选择的文件，以便可以再次选择相同文件
       } else {
-        selectBtn.textContent = '选择文件';
+        updateButtonState('选择文件', false);
       }
     }
   }

@@ -1,4 +1,4 @@
-import { TASKS_CONFIG } from '../../config/tasks.js';
+import { TASKS_CONFIG } from '../../config/tasks.js'; // 导入任务配置
 
 class Modal {
   constructor(modalElements, confirmDialogElements, calendar) {
@@ -193,16 +193,27 @@ class Modal {
     this.elements.confirmDialog.message.textContent = message;
     this.elements.confirmDialog.overlay.classList.remove('hidden');
 
-    // 确保每次打开时，事件监听器都是新的，避免重复触发
-    const handleConfirm = () => { onConfirm(); this.hideConfirm(); };
-    const handleCancel = () => { this.hideConfirm(); };
+    // 清除旧的事件监听器，避免重复绑定
+    this.elements.confirmDialog.confirmBtn.onclick = null;
+    this.elements.confirmDialog.cancelBtn.onclick = null;
+    this.elements.confirmDialog.closeBtn.onclick = null;
+    this.elements.confirmDialog.overlay.onclick = null;
 
-    this.elements.confirmDialog.confirmBtn.onclick = handleConfirm;
-    this.elements.confirmDialog.cancelBtn.onclick = handleCancel;
-    this.elements.confirmDialog.closeBtn.onclick = handleCancel; // 关闭按钮也视为取消
-    this.elements.confirmDialog.overlay.onclick = (e) => { // 点击背景关闭
-      if (e.target === this.elements.confirmDialog.overlay) handleCancel();
+    // 定义处理函数
+    const handleConfirm = () => {
+      onConfirm();
+      this.hideConfirm();
     };
+    const handleCancel = () => {
+      this.hideConfirm();
+    };
+
+    this.elements.confirmDialog.confirmBtn.addEventListener('click', handleConfirm, { once: true });
+    this.elements.confirmDialog.cancelBtn.addEventListener('click', handleCancel, { once: true });
+    this.elements.confirmDialog.closeBtn.addEventListener('click', handleCancel, { once: true }); // 关闭按钮也视为取消
+    this.elements.confirmDialog.overlay.addEventListener('click', (e) => { // 点击背景关闭
+      if (e.target === this.elements.confirmDialog.overlay) handleCancel();
+    }, { once: true });
   }
 
   hideConfirm() {

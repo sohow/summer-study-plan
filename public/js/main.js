@@ -2,7 +2,7 @@ import '../css/base.css';
 import '../css/calendar.css';
 import '../css/modal.css';
 import '../css/components.css';
-import '../css/toast.css';
+import '../css/toast.css'; // 确保 toast.css 在这里被引入
 import { TASKS_CONFIG as TASKS } from '../../config/tasks.js'; // 导入任务配置
 
 import Calendar from './calendar.js';

@@ -32,7 +32,7 @@ RUN npm install --production
 # 从构建阶段复制已构建的前端资源和后端服务器文件
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server.js ./server.js
-COPY --from=builder /app/public/tasks.js ./public/tasks.js
+COPY --from=builder /app/config/tasks.js ./config/tasks.js
 
 # 暴露应用运行的端口
 EXPOSE 3000

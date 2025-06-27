@@ -46,6 +46,9 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 当部署在反向代理（如 Nginx）后面时，需要信任代理，以便正确识别 HTTPS 连接和客户端 IP
+app.set('trust proxy', 1);
+
 // ---- 静态文件服务 ----
 // 根据环境提供不同的静态文件目录。此中间件应放在所有API路由之前。
 if (process.env.NODE_ENV === 'production') {
@@ -55,6 +58,17 @@ if (process.env.NODE_ENV === 'production') {
     // 开发环境：提供 public 目录中的源文件
     app.use(express.static(path.join(__dirname, 'public')));
 }
+
+// ---- 安全头部 (CSP) ----
+// 建议在生产环境中使用更严格的 CSP
+app.use((req, res, next) => {
+    res.setHeader(
+        'Content-Security-Policy',
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; connect-src 'self';"
+    );
+    next();
+});
+
 
 function calculateScore(dayItems) {
     if (!dayItems) return 0;
@@ -74,6 +88,9 @@ function calculateScore(dayItems) {
 const DB_PATH = path.join(__dirname, 'database.json');
 
 async function readDB() {
+    // 确保 uploads 目录存在
+    await fs.mkdir(path.join(__dirname, 'uploads'), { recursive: true });
+
     // 确保数据库文件所在的目录存在
     const dbDir = path.dirname(DB_PATH);
     await fs.mkdir(dbDir, { recursive: true });
@@ -91,6 +108,8 @@ async function writeDB(data) {
     await fs.writeFile(DB_PATH, JSON.stringify(data, null, 2));
 }
 
+// 辅助函数：解码文件名，处理中文乱码问题
+// 注意：Multer 默认处理 UTF-8，但某些旧版浏览器或特定配置可能导致乱码，此函数作为兼容性处理
 const decodeOriginalName = (originalname) => Buffer.from(originalname, 'latin1').toString('utf8');
 
 // ---- 文件上传配置 (Multer) ----
@@ -106,7 +125,7 @@ const storage = multer.diskStorage({
             return cb(new Error('日期格式不合法'));
         }
         const uploadPath = path.join(__dirname, 'uploads', date);
-        // 使用异步mkdir，并让它在已存在时也不报错
+        // 使用异步 mkdir，并让它在已存在时也不报错
         fs.mkdir(uploadPath, { recursive: true }).then(() => cb(null, uploadPath)).catch(cb);
     },
     filename: function (req, file, cb) {
@@ -116,9 +135,34 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({
-    storage: storage,
+    storage: storage, // 使用上面定义的存储配置
+    // 服务器端文件类型和大小验证
     limits: {
-        fileSize: 2 * 1024 * 1024 * 1024, // 设置单个文件大小上限为 2GB
+        fileSize: 50 * 1024 * 1024, // 设置单个文件大小上限为 50MB (根据实际需求调整)
+    },
+    fileFilter: (req, file, cb) => {
+        const uploadType = req.body.uploadType;
+        const taskConfig = TASKS.find(task => task.id === uploadType);
+        let allowedMimeTypes = [];
+
+        if (taskConfig) {
+            allowedMimeTypes = taskConfig.types ? taskConfig.types.split(',').map(t => t.trim()) : [];
+        } else {
+            TASKS.forEach(task => {
+                if (task.subTasks) {
+                    const subTask = task.subTasks.find(sub => sub.id === uploadType);
+                    if (subTask) {
+                        allowedMimeTypes = subTask.types ? subTask.types.split(',').map(t => t.trim()) : [];
+                    }
+                }
+            });
+        }
+        // 检查文件类型是否在允许的列表中
+        if (allowedMimeTypes.some(type => file.mimetype.startsWith(type.replace('*', '')) || type === file.mimetype)) {
+            cb(null, true); // 允许上传
+        } else {
+            cb(new Error(`文件类型不被允许: ${file.mimetype}. 允许的类型: ${allowedMimeTypes.join(', ')}`), false);
+        }
     },
 }).any();
 
@@ -225,7 +269,13 @@ app.post('/api/delete', requireAuth, async (req, res) => {
         }
 
         // 删除物理文件
-        const fullPath = path.join(__dirname, filePath);
+        // 确保文件路径在 uploads 目录下，防止路径遍历攻击
+        const fullPath = path.resolve(__dirname, filePath);
+        const uploadsDir = path.resolve(__dirname, 'uploads');
+        if (!fullPath.startsWith(uploadsDir)) {
+            return res.status(403).json({ message: '禁止访问指定路径' });
+        }
+
         await fs.unlink(fullPath).catch(err => {
             if (err.code !== 'ENOENT') { // ENOENT: Error NO ENTity (file not found)
                 console.error(`删除文件失败: ${fullPath}`, err);
@@ -274,7 +324,22 @@ app.get('/api/data', requireAuth, async (req, res) => {
 app.post('/api/upload', thirtyMinTimeout, requireAuth, (req, res) => {
     upload(req, res, async function (err) {
         if (err instanceof multer.MulterError) {
-            if (err.code === 'LIMIT_FILE_SIZE') {
+            if (err.code === 'LIMIT_PART_COUNT') {
+                return res.status(400).json({ message: '上传文件数量超出限制' });
+            } else if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).json({ message: `文件过大，最大允许 ${upload.limits.fileSize / (1024 * 1024)}MB` });
+            } else if (err.code === 'LIMIT_FILE_COUNT') {
+                return res.status(400).json({ message: '上传文件数量超出限制' });
+            } else if (err.code === 'LIMIT_FIELD_KEY') {
+                return res.status(400).json({ message: '字段名过长' });
+            } else if (err.code === 'LIMIT_FIELD_VALUE') {
+                return res.status(400).json({ message: '字段值过长' });
+            } else if (err.code === 'LIMIT_FIELD_COUNT') {
+                return res.status(400).json({ message: '字段数量超出限制' });
+            } else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+                // err.field 是导致错误的字段名
+                return res.status(400).json({ message: `上传文件类型或数量不匹配: ${err.field}` });
+            } else if (err.code === 'FILE_TYPE_NOT_ALLOWED') { // 自定义错误码
                 return res.status(400).json({ message: `文件过大，最大允许 ${upload.limits.fileSize / (1024 * 1024)}MB` });
             } else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
                 return res.status(400).json({ message: `上传文件数量超出限制或字段名不匹配` });
@@ -374,12 +439,20 @@ app.post('/api/upload', thirtyMinTimeout, requireAuth, (req, res) => {
 // GET: 受保护的缩略图文件访问路由
 app.get('/uploads/thumbnails/:date/:filename', requireAuth, (req, res) => {
     const { date, filename } = req.params;
-    // 基本验证以防止路径遍历攻击
-    if (date.includes('..') || filename.includes('..') || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    // 严格验证日期格式
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         return res.status(400).send('无效的路径或日期格式');
     }
-    const filePath = path.join(__dirname, 'uploads', 'thumbnails', date, filename);
 
+    // 使用 path.resolve 确保路径安全，并检查是否在预期目录内
+    const requestedPath = path.resolve(__dirname, 'uploads', 'thumbnails', date, filename);
+    const baseUploadsDir = path.resolve(__dirname, 'uploads', 'thumbnails');
+
+    // 确保请求的文件路径位于 uploads/thumbnails 目录下
+    if (!requestedPath.startsWith(baseUploadsDir)) {
+        return res.status(403).send('禁止访问指定路径');
+    }
+    const filePath = requestedPath; // 使用验证后的安全路径
     res.setHeader('Content-Disposition', 'inline');
     res.sendFile(filePath, (err) => {
         if (err) {
@@ -400,12 +473,20 @@ app.get('/uploads/thumbnails/:date/:filename', requireAuth, (req, res) => {
 // 只有认证用户才能访问 /uploads 路径下的文件
 app.get('/uploads/:date/:filename', requireAuth, (req, res) => {
     const { date, filename } = req.params;
-    // 基本验证以防止路径遍历攻击，并确保日期格式正确
-    if (date.includes('..') || filename.includes('..') || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    // 严格验证日期格式
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         return res.status(400).send('无效的路径或日期格式');
     }
-    const filePath = path.join(__dirname, 'uploads', date, filename);
 
+    // 使用 path.resolve 确保路径安全，并检查是否在预期目录内
+    const requestedPath = path.resolve(__dirname, 'uploads', date, filename);
+    const baseUploadsDir = path.resolve(__dirname, 'uploads');
+
+    // 确保请求的文件路径位于 uploads 目录下
+    if (!requestedPath.startsWith(baseUploadsDir)) {
+        return res.status(403).send('禁止访问指定路径');
+    }
+    const filePath = requestedPath; // 使用验证后的安全路径
     // 设置 Content-Disposition 为 inline，以便浏览器直接显示文件
     res.setHeader('Content-Disposition', 'inline');
 
