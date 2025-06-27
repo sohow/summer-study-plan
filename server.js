@@ -8,7 +8,7 @@ import {
 import session from 'express-session';
 import bcrypt from 'bcrypt';
 import 'dotenv/config'; // 用于加载 .env 文件
-import { TASKS_CONFIG as TASKS } from './public/tasks.js'; // 导入任务配置
+import { TASKS_CONFIG as TASKS } from './config/tasks.js'; // 导入任务配置
 
 // 获取当前模块的文件路径和目录路径
 const __filename = fileURLToPath(import.meta.url);
@@ -74,6 +74,9 @@ function calculateScore(dayItems) {
 const DB_PATH = path.join(__dirname, 'database.json');
 
 async function readDB() {
+    // 确保数据库文件所在的目录存在
+    const dbDir = path.dirname(DB_PATH);
+    await fs.mkdir(dbDir, { recursive: true });
     try {
         await fs.access(DB_PATH);
     } catch {
@@ -271,7 +274,13 @@ app.get('/api/data', requireAuth, async (req, res) => {
 app.post('/api/upload', thirtyMinTimeout, requireAuth, (req, res) => {
     upload(req, res, async function (err) {
         if (err instanceof multer.MulterError) {
-            return res.status(400).json({ message: `文件上传错误: ${err.message}` });
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).json({ message: `文件过大，最大允许 ${upload.limits.fileSize / (1024 * 1024)}MB` });
+            } else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+                return res.status(400).json({ message: `上传文件数量超出限制或字段名不匹配` });
+            } else {
+                return res.status(400).json({ message: `文件上传错误: ${err.message}` });
+            }
         } else if (err) {
             return res.status(500).json({ message: `上传预处理失败: ${err.message}` });
         }

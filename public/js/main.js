@@ -3,6 +3,7 @@ import '../css/calendar.css';
 import '../css/modal.css';
 import '../css/components.css';
 import '../css/toast.css';
+import { TASKS_CONFIG as TASKS } from '../../config/tasks.js'; // 导入任务配置
 
 import Calendar from './calendar.js';
 import UploadHandler from './upload.js';

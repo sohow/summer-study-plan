@@ -1,4 +1,4 @@
-import { TASKS_CONFIG } from '../tasks.js';
+import { TASKS_CONFIG } from '../../config/tasks.js';
 
 class Modal {
   constructor(modalElements, confirmDialogElements, calendar) {

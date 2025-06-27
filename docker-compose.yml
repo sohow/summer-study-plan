@@ -17,11 +17,11 @@ services:
       USERNAME: "admin" # 您的登录用户名，默认为 'admin'
     # 数据卷：用于持久化数据库文件和上传的文件
     volumes:
-      - app_db_file:/app/database.json # 持久化 database.json 文件
+      - app_data:/app/data # 持久化数据目录
       - app_uploads_dir:/app/uploads   # 持久化 uploads 目录
     restart: always # 容器退出时总是重启
 
 # 定义命名卷，Docker 会管理这些卷的生命周期
 volumes:
-  app_db_file:
+  app_data: # 新增数据卷
   app_uploads_dir:
