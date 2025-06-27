@@ -1,3 +1,9 @@
+import '../css/base.css';
+import '../css/calendar.css';
+import '../css/modal.css';
+import '../css/components.css';
+import '../css/toast.css';
+
 import Calendar from './calendar.js';
 import UploadHandler from './upload.js';
 import Modal from './modal.js';

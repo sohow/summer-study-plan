@@ -1,0 +1,27 @@
+services:
+  app:
+    # 从当前目录的 Dockerfile 构建镜像
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # 端口映射：将容器的 3000 端口映射到主机的 3000 端口
+    ports:
+      - "3000:3000"
+    # 环境变量：这些变量将传递给容器内的 Node.js 应用
+    environment:
+      # !!! 重要：请替换为您的实际安全值 !!!
+      # PASSWORD_HASH 应是您通过 hash-password.js 生成的密码哈希
+      PASSWORD_HASH: "your_actual_password_hash_here"
+      # SESSION_SECRET 应是一个长而随机的字符串，用于加密会话
+      SESSION_SECRET: "your_long_random_session_secret_here"
+      USERNAME: "admin" # 您的登录用户名，默认为 'admin'
+    # 数据卷：用于持久化数据库文件和上传的文件
+    volumes:
+      - app_db_file:/app/database.json # 持久化 database.json 文件
+      - app_uploads_dir:/app/uploads   # 持久化 uploads 目录
+    restart: always # 容器退出时总是重启
+
+# 定义命名卷，Docker 会管理这些卷的生命周期
+volumes:
+  app_db_file:
+  app_uploads_dir:

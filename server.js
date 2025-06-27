@@ -35,13 +35,26 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production', // 在生产环境中应使用 secure cookie
+        // 'auto' is the recommended setting. It sets the 'Secure' flag if the connection is secure (HTTPS),
+        // and does not set it if the connection is insecure (HTTP). This works for both local development
+        // and production deployment over HTTPS.
+        secure: 'auto',
         httpOnly: true, // 防止客户端JS访问cookie
         maxAge: 24 * 60 * 60 * 1000 // session有效期24小时
-    }
+    },
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ---- 静态文件服务 ----
+// 根据环境提供不同的静态文件目录。此中间件应放在所有API路由之前。
+if (process.env.NODE_ENV === 'production') {
+    // 生产环境：提供 dist 目录中的优化文件
+    app.use(express.static(path.join(__dirname, 'dist')));
+} else {
+    // 开发环境：提供 public 目录中的源文件
+    app.use(express.static(path.join(__dirname, 'public')));
+}
 
 function calculateScore(dayItems) {
     if (!dayItems) return 0;
@@ -106,10 +119,6 @@ const upload = multer({
     },
 }).any();
 
-// ---- 静态文件服务 ----
-// 静态文件（如login.html, css, js）会由这个中间件处理
-app.use(express.static(path.join(__dirname, 'public')));
-
 // ---- 认证中间件 ----
 const requireAuth = (req, res, next) => {
     if (req.session.isAuthenticated) {
@@ -144,7 +153,13 @@ app.post('/api/login', async (req, res) => {
 
         if (username === expectedUsername && isPasswordCorrect) {
             req.session.isAuthenticated = true; // 在 session 中标记为已认证
-            res.json({ message: '登录成功' });
+            // 显式保存 session，确保在客户端重定向前 session 已被持久化
+            req.session.save((err) => {
+                if (err) {
+                    return res.status(500).json({ message: 'Session 保存失败' });
+                }
+                res.json({ message: '登录成功' });
+            });
         } else {
             res.status(401).json({ message: '用户名或密码错误' });
         }
@@ -299,7 +314,7 @@ app.post('/api/upload', thirtyMinTimeout, requireAuth, (req, res) => {
             if (!db[date].items) {
                 db[date].items = {};
             }
-            const existingFiles = db[date].items[uploadType] || [];            
+            const existingFiles = db[date].items[uploadType] || [];
 
             if (existingFiles.length + mainFiles.length > 10) {
                 // 如果超出限制，删除已上传的临时文件
@@ -411,23 +426,19 @@ app.get('/uploads/:date/:filename', requireAuth, (req, res) => {
 app.get('/*path', (req, res) => {
     // 忽略所有API请求
     if (req.path.startsWith('/api/')) {
-        return res.status(404).send('Not Found');
+        return res.status(404).send('API route not found');
     }
-
-    // 检查请求路径是否包含文件扩展名。如果是，则假定它是一个静态资源请求。
-    // 由于 express.static 中间件在前，如果这个请求还能到达这里，
-    // 说明文件未找到。因此，我们应该返回 404，而不是重定向或发送 index.html。
+    // 如果请求的是带扩展名的文件但未被 static 中间件找到，则返回 404
     if (path.extname(req.path)) {
         return res.status(404).send('Not Found');
     }
-
-    // 对于没有扩展名的页面路由（如 '/', '/dashboard' 等）:
-    // 如果用户未认证，则重定向到登录页。
+    // 对于页面路由（如 '/'），检查认证
     if (!req.session.isAuthenticated) {
         return res.redirect('/login.html');
     }
-    // 如果用户已认证，则提供单页应用的主入口文件。
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    // 如果已认证，则发送主应用入口
+    const indexPath = process.env.NODE_ENV === 'production' ? path.join(__dirname, 'dist', 'index.html') : path.join(__dirname, 'public', 'index.html');
+    res.sendFile(indexPath);
 });
 
 app.listen(PORT, () => {

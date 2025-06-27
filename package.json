@@ -1,17 +1,33 @@
 {
+  "name": "summer-study-plan",
+  "version": "1.0.0",
+  "description": "A simple web application to track summer study progress.",
+  "main": "server.js",
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "build": "webpack --mode production"
   },
+  "keywords": [
+    "study",
+    "progress",
+    "tracker"
+  ],
   "dependencies": {
     "bcrypt": "^6.0.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
-    "multer": "^2.0.1"
+    "multer": "^2.0.1",
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4"
   },
   "devDependencies": {
+    "css-loader": "^7.1.2",
+    "css-minimizer-webpack-plugin": "^7.0.2",
+    "html-webpack-plugin": "^5.6.3",
+    "mini-css-extract-plugin": "^2.9.2",
     "nodemon": "^3.1.10"
   }
 }
