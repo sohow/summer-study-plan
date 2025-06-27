@@ -1,0 +1,173 @@
+/* ---- 可复用组件 ---- */
+
+/* 通用按钮 */
+.btn {
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.95em;
+}
+
+.btn-logout {
+    background-color: #f44336; /* 红色 */
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-left: 20px;
+    transition: background-color 0.2s ease;
+}
+.btn-logout:hover {
+    background-color: #d32f2f;
+}
+
+.btn-cancel {
+    background-color: #f1f3f5;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+.btn-cancel:hover { background-color: #e9ecef; }
+
+.btn-confirm {
+    background-color: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color);
+}
+.btn-confirm:hover {
+    background-color: #357ABD;
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.4);
+}
+
+/* 日历分数颜色 (从 calendar.css 移动过来，因为这里有其他颜色定义) */
+.score-yellow { background-color: var(--score-yellow); }
+.score-yellow .day-score { color: #f57f17; }
+.score-green { background-color: var(--score-green); }
+.score-green .day-score { color: #388e3c; }
+
+/* PDF 链接 */
+.pdf-link {
+    display: inline-block;
+    padding: 6px 10px;
+    background-color: #f1f3f5;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--text-color);
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.pdf-link:hover {
+    background-color: #e9ecef;
+}
+
+/* 上传操作按钮 */
+.item-action button, .sub-item-action button {
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9em;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.upload-btn {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+.upload-btn:hover {
+    background-color: var(--primary-color);
+    color: var(--white);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.item-action button:disabled, .sub-item-action button:disabled {
+    background-color: #e9ecef;
+    color: #6c757d;
+    border-color: #ced4da;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 文件删除按钮 */
+.file-delete-btn {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 22px;
+    height: 22px;
+    background-color: #dc3545;
+    color: white;
+    border: 1px solid white;
+    border-radius: 50%;
+    font-size: 16px;
+    line-height: 20px;
+    text-align: center;
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s ease-in-out;
+    z-index: 10;
+    padding: 0;
+}
+
+.file-preview:hover .file-delete-btn {
+    opacity: 1;
+    transform: scale(1);
+}
+.file-delete-btn:hover {
+    transform: scale(1.2);
+}
+
+/* PDF 链接 */
+.pdf-link {
+    display: inline-block;
+    padding: 6px 10px;
+    background-color: #f1f3f5;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--text-color);
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.pdf-link:hover {
+    background-color: #e9ecef;
+}
+
+/* Submit Button */
+.submit-btn {
+    background-color: #28a745;
+    color: white;
+    margin-left: 10px;
+    border: 1px solid #218838;
+}
+.submit-btn:hover { 
+    background-color: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Delete Button */
+.delete-btn {
+    background-color: #dc3545;
+    color: white;
+    margin-left: 10px;
+    border: 1px solid #c82333;
+}
+.delete-btn:hover { 
+    background-color: #c82333;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}

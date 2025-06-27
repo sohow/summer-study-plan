@@ -1,0 +1,112 @@
+/* ---- 日历 ---- */
+#calendar-container {
+    display: flex;
+    justify-content: center; /* 水平居中日历 */
+    flex-wrap: wrap;         /* 在空间不足时换行 */
+    gap: 2rem;               /* 日历之间的间距 */
+    padding: 2rem 1rem;      /* 容器的内边距 */
+}
+
+.calendar {
+    flex: 1 1 350px; /* 允许日历在350px的基础上伸缩和换行 */
+    max-width: 450px; /* 防止在非常宽的屏幕上，日历变得过大 */
+    min-width: 300px; /* 保证日历在收缩时不会变得过窄 */
+    background-color: var(--white);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 20px;
+}
+
+.calendar-header {
+    text-align: center;
+    font-size: 2em;
+    font-weight: 600;
+    margin-bottom: 25px;
+    color: var(--primary-color);
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+}
+
+.day-name {
+    font-weight: 600;
+    text-align: center;
+    padding-bottom: 10px;
+    color: var(--light-text-color);
+    font-size: 0.9em;
+}
+
+.day-cell {
+    aspect-ratio: 1 / 1; /* 保持宽高比为1:1，形成正方形 */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 8px;
+    min-width: 0; /* 允许日历单元格在网格中更灵活地收缩 */
+    border-radius: 8px;
+    background-color: #fdfdfd;
+    border: 1px solid var(--border-color);
+    overflow: hidden; /* 确保内容不会意外撑开单元格 */
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.day-cell:not(.empty):hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.day-cell.empty {
+    background-color: transparent;
+    border: none;
+    cursor: default;
+}
+
+.day-cell.today {
+    border: 2px solid var(--primary-color);
+    background-color: var(--primary-light);
+}
+
+.day-number {
+    font-size: 1.1em;
+    font-weight: 500;
+    line-height: 1; /* 统一行高，避免文本渲染差异影响高度 */
+}
+
+.day-score {
+    align-self: flex-end;
+    font-weight: 700;
+    font-size: 1.1em; /* 稍微减小字体大小，以确保在有限空间内完整显示 */
+    color: #888;
+    line-height: 1; /* 统一行高，避免文本渲染差异影响高度 */
+}
+
+/* 日历分数颜色 */
+.score-red .day-score { color: #d32f2f; }
+.score-red { background-color: var(--score-red); }
+.score-yellow .day-score { color: #f57f17; }
+.score-blue .day-score { color: #1976d2; }
+.score-blue { background-color: var(--score-blue); }
+
+/* Responsive Design for Calendar */
+@media (max-width: 768px) {
+    #calendar-container {
+        flex-direction: column; /* On small screens, force vertical stacking */
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .calendar {
+        width: 100%; /* When stacked vertically, calendar takes full container width */
+        max-width: 500px; /* Still allow a max-width */
+        flex-basis: auto; /* Reset basis */
+        padding: 15px;
+    }
+    .calendar-grid { gap: 5px; }
+    .day-cell { padding: 4px; border-radius: 4px; }
+    .day-number { font-size: 0.8em; }
+    .day-score { font-size: 0.9em; }
+}

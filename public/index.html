@@ -4,28 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>暑假学习计划打卡</title>
-    <link rel="stylesheet" href="css/style.css">
+    <!-- 基础样式和变量定义 -->
+    <link rel="stylesheet" href="css/base.css">
+    <!-- 各模块样式 -->
+    <link rel="stylesheet" href="css/calendar.css">
+    <link rel="stylesheet" href="css/modal.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/toast.css">
 </head>
 <body>
     <header>
         <h1>暑假学习计划打卡</h1>
         <div class="total-score-container">
             当前总分数: <span id="total-score">0</span>
+            <button id="logout-btn" class="btn btn-logout">退出登录</button>
         </div>
     </header>
 
     <main id="calendar-container">
         </main>
 
-    <div id="modal-overlay" class="hidden">
-        <div id="modal-content">
-            <button id="close-modal-btn">&times;</button>
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div id="modal-content" class="modal-content">
+            <button id="close-modal-btn" class="close-modal-btn">&times;</button>
             <h3 id="modal-title">2024-07-15 学习记录</h3>
             <form id="upload-form">
                 <input type="hidden" id="form-date" name="date">
                 </form>
             <div id="preview-area">
                 </div>
+        </div>
+    </div>
+
+    <!-- 确认弹窗结构 -->
+    <div id="confirm-dialog-overlay" class="modal-overlay hidden confirm-overlay">
+        <div id="confirm-dialog-content" class="modal-content confirm-content">
+            <div class="modal-header">
+                <h3 id="confirm-dialog-title" class="modal-title">请确认</h3>
+                <button id="confirm-dialog-close-btn" type="button" class="close-modal-btn" title="关闭">&times;</button>
+            </div>
+            <p id="confirm-dialog-message" class="confirm-message">确定要执行此操作吗？</p>
+            <div class="confirm-actions">
+                <button id="confirm-dialog-cancel-btn" type="button" class="btn btn-cancel">取消</button>
+                <button id="confirm-dialog-confirm-btn" type="button" class="btn btn-confirm">确定</button>
+            </div>
         </div>
     </div>
 
